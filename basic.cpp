@@ -62,7 +62,7 @@ void line::draw(pair<int,int>v1,pair<int,int>v2, Engine &engine) {
 }
 
 pair <int,int> project::onscreen(double x1, double y1, double z1, float focal_lenght){
-    int size = 100;
+    int size = 1000;
     float x = (float)focal_lenght/z1*x1*size;
     float y =  (float)focal_lenght/z1*y1*size;
     x = (int) x;

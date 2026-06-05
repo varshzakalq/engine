@@ -56,8 +56,8 @@ void Engine::update_and_render() {
     // Since Line isn't a global header variable anymore, 
     // you can instantiate it right here when you need to draw!
    
-    //vector<Vector4>& vertex_buffer = obj.vertex_buffer;
-    //vector <int>&index_buffer = obj.index_buffer;
+    vector<Vector4>& vertex_buffer = obj.vertex_buffer;
+    vector <int>&index_buffer = obj.index_buffer;
 /* std::vector<Vector4> vertex_buffer = {
         {-1.0, -1.0, -1.0, 1.0}, // v0
         { 1.0, -1.0, -1.0, 1.0}, // v1
@@ -86,13 +86,14 @@ void Engine::update_and_render() {
 
     };
 */
-std::vector<Vector4> vertex_buffer = {
-    { 0.0,  10.0,  15.0, 1.0 }, // v0: Safely inside (Z > 10)
-    {-10.0, -10.0,   5.0, 1.0 }, // v1: Clipped out   (Z < 10)
-    { 10.0, -10.0,  15.0, 1.0 }  // v2: Safely inside (Z > 10)
-};
+//just for testing
+// std::vector<Vector4> vertex_buffer = {
+//     { 0.0,  10.0,  15.0, 1.0 }, // v0: Safely inside (Z > 10)
+//     {-10.0, -10.0,   5.0, 1.0 }, // v1: Clipped out   (Z < 10)
+//     { 10.0, -10.0,  15.0, 1.0 }  // v2: Safely inside (Z > 10)
+// };
 
-std::vector<int> index_buffer= { 0, 1, 2 };
+// std::vector<int> index_buffer= { 0, 1, 2 };
 
  
     if(curr_angle>2*M_PI){
@@ -104,9 +105,9 @@ std::vector<int> index_buffer= { 0, 1, 2 };
     curr_angle += 0.01;
 
     Matrix4x4 transformMatrix = {{
-        {   1, 0.0,   0, 0.0},  // Row 0: Rotate Y & Translate X by 5
+        {   c, 0.0,   s, 0.0},  // Row 0: Rotate Y & Translate X by 5
         { 0.0, 1.0, 0.0, 0.0},  // Row 1: No change to Y
-        {  0, 0.0,   1, 10.0 },  // Row 2: Rotate Y & Translate Z by 4
+        {  -s, 0.0,   c, 30.0 },  // Row 2: Rotate Y & Translate Z by 4
         { 0.0, 0.0, 0.0, 1.0}   // Row 3: Homogeneous row
     }};
 
@@ -114,10 +115,14 @@ std::vector<int> index_buffer= { 0, 1, 2 };
 
        
 
+            transformed_vertices.resize(vertex_buffer.size());
+            
             for (size_t i = 0; i < vertex_buffer.size(); i++) {
                 // Transform the original asset data, but save it into our frame-local copy
                 transformed_vertices[i] = transform(transformMatrix, vertex_buffer[i]);
             }
+            // DEBUG: print transformed Z values
+            
 
             vector <pair<int,int>>vertex_buffer_projected;
 
@@ -142,6 +147,7 @@ std::vector<int> index_buffer= { 0, 1, 2 };
 
             vertexes = clip.get_vertex(vertexes); //clips the vertexes
 
+            if (vertexes[0][3] == -999.0) continue; // skip fully clipped triangle
 
             // Pre-allocate xycoordinates with a fixed max size on the stack
            // Pre-allocate xycoordinates with a fixed max size on the stack

@@ -9,7 +9,7 @@ public:
     float focal_length = 1;
 };
 class clipper{
-    int clipping_plane_z= 0;
+    int clipping_plane_z= 10;
     
     array<double, 4> clip(array<double, 4>,array<double, 4>);
 public:  
