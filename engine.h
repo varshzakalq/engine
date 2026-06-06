@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "camera.h"
 #include "basic.h"
+#include "lighting.h"
 // Forward declaration instead of #include "line.h"
 // This tells the compiler "a class named 'line' exists" without needing its file yet.
 
@@ -17,7 +18,9 @@ private:
     camera cam1;
     project projection;
     OBJ obj;
+    uint32_t color;
     clipper clip;
+    lighting light1;
 
     std::vector<Vector4> transformed_vertices; //this will make sure it only created once
 public:
