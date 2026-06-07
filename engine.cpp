@@ -22,12 +22,13 @@ Vector4 transform(const Matrix4x4& M, const Vector4& v) {
         M[3][0]*v[0] + M[3][1]*v[1] + M[3][2]*v[2] + M[3][3]*v[3]  // Fixed: changed v[4] to v[3]
     };
 }
-Engine::Engine() : myLine(*this) ,obj("assets/gun1.obj") {
+Engine::Engine() : myLine(*this) ,obj("assets/cube.obj") {
     pixels = nullptr;
     width = 0;
     height = 0;
     curr_angle = 0;
     color = 0xffff500;
+    
 }
 
 // 2. Add the Destructor implementation
@@ -37,8 +38,12 @@ Engine::~Engine() {
 void Engine::init(uint32_t* pixel_array, int w, int h) {
     pixels = pixel_array;
     transformed_vertices.resize(obj.vertex_buffer.size());
+    
     width = w;
     height = h;
+    z_buffer.resize(w*h);
+    fill_n(z_buffer.begin(), w * h, deapth);
+    crate_texture.load_bmp("assets/crate_1.bmp");
 }
 
 void Engine::put_pixel(int x, int y, uint32_t color) {
@@ -54,7 +59,9 @@ void Engine::update_and_render() {
     // 1. CLEAR THE SCREEN FIRST
     if (pixels != nullptr) {
         memset(pixels, 0, width * height * sizeof(uint32_t));
+        
     }
+    fill_n(z_buffer.begin(), width * height, deapth);
     // Since Line isn't a global header variable anymore, 
     // you can instantiate it right here when you need to draw!
     
@@ -154,7 +161,6 @@ void Engine::update_and_render() {
             auto v1 = transformed_vertices[index_buffer[i-2]].vertex;
             auto v2 = transformed_vertices[index_buffer[i-1]].vertex;
             auto v3 = transformed_vertices[index_buffer[i]].vertex;
-            
            
             std::array<Vector4, 4> vertexes = {v1, v2, v3,{0,0,-1,1}}; // z = -1 is a flag used to check if new vertex added due to clipping
             vertexes = clip.get_vertex(vertexes); 
@@ -162,8 +168,14 @@ void Engine::update_and_render() {
             
             array<pair<int,int>, 4> xycoordinates; 
             
-            color = light1.flat_shader(v1,v2,v3,color);
-            
+            float intensity = light1.flat_shader(v1,v2,v3);
+
+            array<float,3> z_values ={static_cast<float>(v1[2]),static_cast<float>(v2[2]),static_cast<float>(v3[2])};
+            array<array<float, 2>, 3> uv_coords = { 
+                transformed_vertices[index_buffer[i-2]].textures,
+                transformed_vertices[index_buffer[i-1]].textures,
+                transformed_vertices[index_buffer[i]].textures
+            };
             // 1. Determine how many valid vertices exist based on your flag
             int num_vertices = (vertexes[3][2] != -1.0) ? 4 : 3;
 
@@ -178,7 +190,8 @@ void Engine::update_and_render() {
                 //myLine.draw(xycoordinates[0], xycoordinates[1], *this);
                 //myLine.draw(xycoordinates[1], xycoordinates[2], *this);
                 //myLine.draw(xycoordinates[2], xycoordinates[0], *this);
-                projection.fill_color(xycoordinates[0],xycoordinates[1],xycoordinates[2],color,width,height,*this); //this obviously means engine reference
+                //crate texutre for nowww
+                projection.fill_color(z_values,uv_coords,crate_texture,intensity,xycoordinates[0],xycoordinates[1],xycoordinates[2],z_buffer,color,width,height,*this); //this obviously means engine reference
             } 
             else if (num_vertices == 4) {
                 //this i need to check because it can ruin the textures

@@ -17,8 +17,8 @@ Vector3 cross(Vector3 v1,Vector3 v2){
 double dot(Vector3 v1,Vector3 v2){
     return v1.x*v2.x +v1.y*v2.y + v1.z*v2.z;
 }
-uint32_t lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4>v3,uint32_t base_color){
-    base_color= 0xFFFFA50;
+double lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4>v3){
+    
     Vector3 e1 = subtract(v2,v1);
     Vector3 e2 = subtract(v3,v1);
     Vector3 e2_cross_e1= cross(e2,e1);
@@ -31,17 +31,7 @@ uint32_t lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double
     // Temporary debug test inside your flat_shader function:
     // 0xFFFFA500
 
-    uint8_t r = (base_color >> 16) & 0xFF; // Should print 255
-    uint8_t g = (base_color >> 8)  & 0xFF; // Should print 165
-    uint8_t b =  base_color        & 0xFF; // Should print 0
-
-
-    r = static_cast<uint8_t>(r * intensity);
-    g = static_cast<uint8_t>(g * intensity);
-    b = static_cast<uint8_t>(b * intensity);
-
-    uint32_t shaded_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
-        
-    return shaded_color;
+    
+    return intensity;
 
 }

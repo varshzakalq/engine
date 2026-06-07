@@ -5,6 +5,7 @@
 #include "camera.h"
 #include "basic.h"
 #include "lighting.h"
+#include "texture.h"
 // Forward declaration instead of #include "line.h"
 // This tells the compiler "a class named 'line' exists" without needing its file yet.
 
@@ -21,8 +22,10 @@ private:
     uint32_t color;
     clipper clip;
     lighting light1;
-
-    std::vector<vertex_data>transformed_vertices; //this will make sure it only created once
+    float deapth = 100000.0f;
+    std::vector<float> z_buffer;
+    std::vector<vertex_data>transformed_vertices;
+    Texture crate_texture; //this will make sure it only created once
 public:
     // Constructor / Destructor
     Engine();

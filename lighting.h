@@ -11,5 +11,5 @@ class lighting{
     uint32_t light_color;
     double ambient_light =0.1;
 public:
-    uint32_t flat_shader(array<double,4> v1,array<double,4>v2,array<double,4>v3,uint32_t base_color);
+    double flat_shader(array<double,4> v1,array<double,4>v2,array<double,4>v3);
 };
