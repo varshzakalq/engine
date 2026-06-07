@@ -18,7 +18,7 @@ double dot(Vector3 v1,Vector3 v2){
     return v1.x*v2.x +v1.y*v2.y + v1.z*v2.z;
 }
 uint32_t lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4>v3,uint32_t base_color){
-    base_color= 0xFFFFA500;
+    base_color= 0xFFFFA50;
     Vector3 e1 = subtract(v2,v1);
     Vector3 e2 = subtract(v3,v1);
     Vector3 e2_cross_e1= cross(e2,e1);

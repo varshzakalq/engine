@@ -22,7 +22,7 @@ private:
     clipper clip;
     lighting light1;
 
-    std::vector<Vector4> transformed_vertices; //this will make sure it only created once
+    std::vector<vertex_data>transformed_vertices; //this will make sure it only created once
 public:
     // Constructor / Destructor
     Engine();

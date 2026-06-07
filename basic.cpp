@@ -70,7 +70,7 @@ pair <int,int> project::onscreen(double x1, double y1, double z1, float focal_le
     return {static_cast<int>(x),static_cast<int>(y)};
 }
 
-void project::fill_color(pair<int,int> v1, pair<int,int> v2, pair<int,int> v3, uint32_t color, int width, int height, Engine &engine) {
+void project::fill_color(pair<int,int> v1, pair<int,int> v2, pair<int,int> v3, uint32_t &color, int width, int height, Engine &engine) {
     // 1. Calculate bounding box and safely clamp to screen boundaries
     int minX = min({v1.first, v2.first, v3.first});
     int minY = min({v1.second, v2.second, v3.second});
@@ -99,6 +99,7 @@ void project::fill_color(pair<int,int> v1, pair<int,int> v2, pair<int,int> v3, u
 
             if (is_cw) {
                 engine.put_pixel(x, y, color);
+                
             }
             
         }

@@ -1,6 +1,6 @@
 # Blender 5.0.1
 # www.blender.org
-mtllib gun.mtl
+mtllib gun1.mtl
 o Ak-47_0
 v 0.007056 0.108147 0.072964
 v 0.004352 0.108898 0.072964
