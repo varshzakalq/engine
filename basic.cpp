@@ -89,6 +89,7 @@ pair<int, int> project::onscreen(double x1, double y1, double z1, float focal_le
 }
 
 void project::fill_color(
+     array<Vector3,3>normals,
      array<float, 3> z_values,
      array<array<float,2>,3> uv,
      Texture &texture,
@@ -112,10 +113,15 @@ void project::fill_color(
     float x1 = v1.first,  y1 = v1.second;
     float x2 = v2.first,  y2 = v2.second;
     float x3 = v3.first,  y3 = v3.second;
-
+    
+    float intensity1 = light1.smooth_shader(normals[0]);
+    float intensity2 = light1.smooth_shader(normals[1]);
+    float intensity3 = light1.smooth_shader(normals[2]);
+    cout<<intensity1<<" "<<intensity2<<" "<<intensity3<<endl;
     uint8_t r; 
     uint8_t g ;
     uint8_t b ;
+    
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
             // Sample at pixel center
@@ -139,14 +145,16 @@ void project::fill_color(
                 float inv_z2 = 1.0f / z_values[1];
                 float inv_z3 = 1.0f / z_values[2];
 
-                // ... inside your pixel loop, where you find a valid pixel inside the triangle ...
-
+                
                 // 2. Interpolate the inverted depths linearly using your barycentric weights
                 float inv_z = inv_z1 * weight[0] + inv_z2 * weight[1] + inv_z3 * weight[2];
                 float u_by_z = uv[0][0]* inv_z1 * weight[0] + uv[1][0]*inv_z2 * weight[1] + uv[2][0]*inv_z3 * weight[2];
                 float v_by_z = uv[0][1]* inv_z1 * weight[0] + uv[1][1]*inv_z2 * weight[1] + uv[2][1]*inv_z3 * weight[2];
                 float u = u_by_z/inv_z;
                 float v = v_by_z /inv_z;
+                float lit_by_z = intensity1 * inv_z1 * weight[0] + intensity2 * inv_z2 * weight[1] + intensity3 * inv_z3 * weight[2];
+                light_intensity = lit_by_z / inv_z;
+                
                 // 3. Recover the perspective-correct Z value for the Z-buffer test
                 float perspective_correct_z = 1.0f / inv_z;
                 int texel_x = static_cast<int>(u*(texture.width-1));
@@ -163,7 +171,7 @@ void project::fill_color(
                     r = (texture_color >> 16) & 0xFF; 
                     g= (texture_color >> 8)  & 0xFF; 
                     b=  texture_color        & 0xFF; 
-
+                    
                     r = static_cast<uint8_t>(r * light_intensity);
                     g = static_cast<uint8_t>(g * light_intensity);
                     b = static_cast<uint8_t>(b * light_intensity);

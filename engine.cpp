@@ -135,17 +135,39 @@ void Engine::update_and_render() {
        
 
             
-            
-            for (size_t i = 0; i < vertex_buffer.size(); i++) {
-                // Transform the original asset data, but save it into our frame-local copy
+                        for (size_t i = 0; i < vertex_buffer.size(); i++) {
+                // 1. Transform Position
                 transformed_vertices[i].vertex = transform(transformMatrix, vertex_buffer[i].vertex);
-        
-                 // Pass along the UV coordinates and normals untouched for downstream processing (e.g. lighting/texturing)
+                
+                // 2. Set up the raw normal vector with w = 0.0 to discard translation
+                Vector4 raw_normal = {
+                    vertex_buffer[i].normals.x, 
+                    vertex_buffer[i].normals.y,
+                    vertex_buffer[i].normals.z,
+                    0.0 
+                };
+                
+                // 3. Transform the normal vector
+                Vector4 rotated_normal = transform(transformMatrix, raw_normal);
+                
+                // 4. CRITICAL STEP: Calculate length and normalize the vector!
+                double length = sqrt(rotated_normal[0] * rotated_normal[0] + 
+                                    rotated_normal[1] * rotated_normal[1] + 
+                                    rotated_normal[2] * rotated_normal[2]);
+                
+                if (length > 0.0001) { // Prevent division by zero
+                    transformed_vertices[i].normals.x = rotated_normal[0] / length;
+                    transformed_vertices[i].normals.y = rotated_normal[1] / length;
+                    transformed_vertices[i].normals.z = rotated_normal[2] / length;
+                } else {
+                    // Fallback default normal if math collapses
+                    transformed_vertices[i].normals = {0.0f, 1.0f, 0.0f};
+                }
+
+                // 5. Pass along the UV coordinates untouched
                 transformed_vertices[i].textures = vertex_buffer[i].textures;
-                transformed_vertices[i].normals = vertex_buffer[i].normals;
             }
-            
-            
+                        
 
             vector <pair<int,int>>vertex_buffer_projected;
 
@@ -171,11 +193,17 @@ void Engine::update_and_render() {
             float intensity = light1.flat_shader(v1,v2,v3);
 
             array<float,3> z_values ={static_cast<float>(v1[2]),static_cast<float>(v2[2]),static_cast<float>(v3[2])};
+            array<Vector3,3> normals = {
+                transformed_vertices[index_buffer[i-2]].normals,
+                transformed_vertices[index_buffer[i-1]].normals,
+                transformed_vertices[index_buffer[i]].normals
+            };
             array<array<float, 2>, 3> uv_coords = { 
                 transformed_vertices[index_buffer[i-2]].textures,
                 transformed_vertices[index_buffer[i-1]].textures,
                 transformed_vertices[index_buffer[i]].textures
             };
+
             // 1. Determine how many valid vertices exist based on your flag
             int num_vertices = (vertexes[3][2] != -1.0) ? 4 : 3;
 
@@ -191,7 +219,7 @@ void Engine::update_and_render() {
                 //myLine.draw(xycoordinates[1], xycoordinates[2], *this);
                 //myLine.draw(xycoordinates[2], xycoordinates[0], *this);
                 //crate texutre for nowww
-                projection.fill_color(z_values,uv_coords,crate_texture,intensity,xycoordinates[0],xycoordinates[1],xycoordinates[2],z_buffer,color,width,height,*this); //this obviously means engine reference
+                projection.fill_color(normals,z_values,uv_coords,crate_texture,intensity,xycoordinates[0],xycoordinates[1],xycoordinates[2],z_buffer,color,width,height,*this); //this obviously means engine reference
             } 
             else if (num_vertices == 4) {
                 //this i need to check because it can ruin the textures

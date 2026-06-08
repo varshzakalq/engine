@@ -35,3 +35,17 @@ double lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4
     return intensity;
 
 }
+float lighting::smooth_shader(Vector3 normal ){
+    // normal.x = normal.x;
+    // normal.y = normal.y;
+    // normal.z = normal.z;
+    // double length = sqrt(normal.x*normal.x +normal.y*normal.y + normal.z*normal.z);
+    // normal.x /= length;
+    // normal.y /= length;
+    // normal.z /= length;
+    double intensity = dot(normal,smooth_light);
+    intensity = std::max(ambient_light, std::min(1.0, intensity));
+
+    return static_cast<float>(intensity);
+
+}
