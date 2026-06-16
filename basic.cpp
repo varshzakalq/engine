@@ -117,7 +117,6 @@ void project::fill_color(
     float intensity1 = light1.smooth_shader(normals[0]);
     float intensity2 = light1.smooth_shader(normals[1]);
     float intensity3 = light1.smooth_shader(normals[2]);
-    cout<<intensity1<<" "<<intensity2<<" "<<intensity3<<endl;
     uint8_t r; 
     uint8_t g ;
     uint8_t b ;
@@ -150,15 +149,26 @@ void project::fill_color(
                 float inv_z = inv_z1 * weight[0] + inv_z2 * weight[1] + inv_z3 * weight[2];
                 float u_by_z = uv[0][0]* inv_z1 * weight[0] + uv[1][0]*inv_z2 * weight[1] + uv[2][0]*inv_z3 * weight[2];
                 float v_by_z = uv[0][1]* inv_z1 * weight[0] + uv[1][1]*inv_z2 * weight[1] + uv[2][1]*inv_z3 * weight[2];
-                float u = u_by_z/inv_z;
-                float v = v_by_z /inv_z;
+                float u = u_by_z/inv_z*texture_scale_x;
+                float v = v_by_z /inv_z*texture_scale_y;
+                
+
                 float lit_by_z = intensity1 * inv_z1 * weight[0] + intensity2 * inv_z2 * weight[1] + intensity3 * inv_z3 * weight[2];
                 light_intensity = lit_by_z / inv_z;
                 
                 // 3. Recover the perspective-correct Z value for the Z-buffer test
                 float perspective_correct_z = 1.0f / inv_z;
-                int texel_x = static_cast<int>(u*(texture.width-1));
-                int texel_y = static_cast <int>(v*(texture.height-1));
+                int texel_x = ((static_cast<int>(u * texture.width)) % texture.width + texture.width) % texture.width;
+                int texel_y = ((static_cast<int>(v * texture.height)) % texture.height + texture.height) % texture.height;
+
+                // Debug output (only print once per frame to avoid spam)
+                static int debug_counter = 0;
+                if (debug_counter < 5) {
+                    cout << "u=" << u << " v=" << v << " scale=" << light1.scale
+                         << " texel_x=" << texel_x << " texel_y=" << texel_y
+                         << " tex_width=" << texture.width << " tex_height=" << texture.height << endl;
+                    debug_counter++;
+                }
                 int screen_x = x + width / 2;
                 int screen_y = y + height / 2;
                 int buffer_idx = screen_y * width + screen_x;

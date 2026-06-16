@@ -7,6 +7,7 @@
 
 
 using Vector4 = std::array<double, 4>;
+using Matrix4x4 = std::array<std::array<double, 4>, 4>;
 struct Vector3 {
     double x, y, z;
     double& operator[](int index) { return (&x)[index]; }

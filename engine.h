@@ -2,12 +2,17 @@
 #define ENGINE_H
 #include "objloader.h"
 #include <stdint.h>
+#include <vector>
 #include "camera.h"
 #include "basic.h"
 #include "lighting.h"
 #include "texture.h"
+
 // Forward declaration instead of #include "line.h"
 // This tells the compiler "a class named 'line' exists" without needing its file yet.
+
+// Forward declaration to avoid circular include with main_scene.h (which includes engine.h)
+struct Instance;
 
 class Engine {
 private:
@@ -26,6 +31,9 @@ private:
     std::vector<float> z_buffer;
     std::vector<vertex_data>transformed_vertices;
     Texture crate_texture; //this will make sure it only created once
+
+    // Renders a single instance's mesh using its world transform
+    void render_instance(const Instance& inst);
 public:
     // Constructor / Destructor
     Engine();
@@ -40,8 +48,8 @@ public:
     // Your core PutPixel function
     void put_pixel(int x, int y, uint32_t color);
 
-    // A function where you will write your rendering logic (lines, shapes, etc.)
-    void update_and_render();
+    // Renders every instance in the provided buffer (each with its own world transform)
+    void update_and_render(const std::vector<Instance>& instances);
 
     // Getters so other classes (like line) can safely look at your screen bounds/pixels
     uint32_t* get_pixels() const { return pixels; }

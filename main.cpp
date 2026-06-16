@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include "engine.h"
+#include "game.h"
 
 #include <vector>
 
@@ -51,6 +52,9 @@ int main(int argc, char* argv[]) {
     Engine my_engine;
     my_engine.init(pixel_array.data(), width, height);
 
+    // Create the game/scene (manages the 9 cubes)
+    Game my_game;
+
     // --- THE MAIN LOOP ---
     while (is_running) {
         
@@ -62,8 +66,8 @@ int main(int argc, char* argv[]) {
         }
 
         //will update the engine with modified pixels
-        
-        my_engine.update_and_render();
+        my_game.update();
+        my_engine.update_and_render(my_game.get_render_buffer_from_main_scene());
 
         // 6. UPDATE THE SDL3 TEXTURE
         // This uploads your raw array data directly onto the texture

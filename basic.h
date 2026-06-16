@@ -16,7 +16,9 @@ public:
 class project{
 int size = 300;
 lighting light1;
-float margin_of_error = 0.01f; //this reduces small smaall lines in the mdel presentation
+float margin_of_error = 0.01f; 
+float texture_scale_x  = 4.0f;
+float texture_scale_y = 4.0f;
 public:
    
      pair <int,int> onscreen(double x1, double y1, double z1, float focal_lenght);
