@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
 
         //will update the engine with modified pixels
         my_game.update();
-        my_engine.update_and_render(my_game.get_render_buffer_from_main_scene());
+        my_engine.update_and_render(my_game.get_render_buffer_from_main_scene(),my_game.get_lights());
 
         // 6. UPDATE THE SDL3 TEXTURE
         // This uploads your raw array data directly onto the texture

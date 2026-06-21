@@ -4,15 +4,10 @@
 #include <fstream>
 #include <string>
 #include <iostream>
-
+#include "maths.h"
 
 using Vector4 = std::array<double, 4>;
 using Matrix4x4 = std::array<std::array<double, 4>, 4>;
-struct Vector3 {
-    double x, y, z;
-    double& operator[](int index) { return (&x)[index]; }
-    const double& operator[](int index) const { return (&x)[index]; }
-};
 
 struct vertex_data{
     Vector4 vertex;

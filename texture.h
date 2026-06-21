@@ -13,7 +13,6 @@
 struct Texture {
     int width = 0;
     int height = 0;
-        
     std::vector<uint32_t> texels; // Holds the 0xAARRGGBB hex colors
 
     bool load_bmp(const std::string& filename) {

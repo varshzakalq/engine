@@ -79,6 +79,7 @@ public:
         m_instances.push_back({mesh_id, IDENTITY_MATRIX, IDENTITY_MATRIX, nullptr, 1.0f, 1.0f});
         return m_instances.back();
     }
+    
     std::vector<Instance> get_buffer(){
         return m_instances;
     }

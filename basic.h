@@ -20,8 +20,18 @@ float margin_of_error = 0.01f;
 float texture_scale_x  = 4.0f;
 float texture_scale_y = 4.0f;
 public:
-   
-     pair <int,int> onscreen(double x1, double y1, double z1, float focal_lenght);
-    void fill_color(array<Vector3,3>normals,array<float,3>z_values,array<array<float,2>,3> uv, Texture &texture,float light_intensity,pair<int,int>v1,pair<int,int>v2,pair<int,int>v3,vector <float>&z_buffer,uint32_t &color,int screen_widht,int screen_height,Engine &e);
+pair<int, int> onscreen(double x1, double y1, double z1, float focal_length) ;
+void fill_color(
+     const array<vertex_data, 3> &vertexes, 
+     const array<float, 3> &intensities,    
+     const pair<int, int> &v1, 
+     const pair<int, int> &v2, 
+     const pair<int, int> &v3, 
+     Texture &texture,                     // <-- Put it back here
+     vector<float>& z_buffer, 
+     int width, 
+     int height, 
+     Engine &engine
+    ) ;
 
 };

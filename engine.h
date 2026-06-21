@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "basic.h"
 #include "lighting.h"
+#include "maths.h"
 #include "texture.h"
 
 // Forward declaration instead of #include "line.h"
@@ -33,7 +34,7 @@ private:
     Texture crate_texture; //this will make sure it only created once
 
     // Renders a single instance's mesh using its world transform
-    void render_instance(const Instance& inst);
+    void render_instance(const Instance& inst,vector<point_light>lights);
 public:
     // Constructor / Destructor
     Engine();
@@ -49,7 +50,7 @@ public:
     void put_pixel(int x, int y, uint32_t color);
 
     // Renders every instance in the provided buffer (each with its own world transform)
-    void update_and_render(const std::vector<Instance>& instances);
+    void update_and_render(const std::vector<Instance>& instances,vector<point_light>lights);
 
     // Getters so other classes (like line) can safely look at your screen bounds/pixels
     uint32_t* get_pixels() const { return pixels; }

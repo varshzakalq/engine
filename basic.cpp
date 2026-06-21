@@ -89,22 +89,19 @@ pair<int, int> project::onscreen(double x1, double y1, double z1, float focal_le
 }
 
 void project::fill_color(
-     array<Vector3,3>normals,
-     array<float, 3> z_values,
-     array<array<float,2>,3> uv,
-     Texture &texture,
-     float light_intensity,
-     pair<int, int> v1, 
-     pair<int, int> v2, 
-     pair<int, int> v3, 
+     const array<vertex_data, 3> &vertexes, 
+     const array<float, 3> &intensities,    
+     const pair<int, int> &v1, 
+     const pair<int, int> &v2, 
+     const pair<int, int> &v3, 
+     Texture &texture,                     // <-- Put it back here
      vector<float>& z_buffer, 
-     uint32_t &color, 
      int width, 
      int height, 
      Engine &engine
     ) {
     
-    // 1. Compute and safely clamp bounding box to screen coordinates (accounting for center shifting)
+    // 1. Compute and safely clamp bounding box
     int minX = max(-width / 2,     min({v1.first, v2.first, v3.first}));
     int minY = max(-height / 2,    min({v1.second, v2.second, v3.second}));
     int maxX = min(width / 2 - 1,  max({v1.first, v2.first, v3.first}));
@@ -114,83 +111,81 @@ void project::fill_color(
     float x2 = v2.first,  y2 = v2.second;
     float x3 = v3.first,  y3 = v3.second;
     
-    float intensity1 = light1.smooth_shader(normals[0]);
-    float intensity2 = light1.smooth_shader(normals[1]);
-    float intensity3 = light1.smooth_shader(normals[2]);
-    uint8_t r; 
-    uint8_t g ;
-    uint8_t b ;
+    // Cache vertex depths and attributes outside the loop
+    float z1 = vertexes[0].vertex[2];
+    float z2 = vertexes[1].vertex[2];
+    float z3 = vertexes[2].vertex[2];
+
+    float inv_z1 = 1.0f / z1;
+    float inv_z2 = 1.0f / z2;
+    float inv_z3 = 1.0f / z3;
+
+    // Pre-multiply texture coordinates by inverse depth (Hoist out of loop)
+    float u1_z = vertexes[0].textures[0] * inv_z1;
+    float u2_z = vertexes[1].textures[0] * inv_z2;
+    float u3_z = vertexes[2].textures[0] * inv_z3;
+
+    float v1_z = vertexes[0].textures[1] * inv_z1;
+    float v2_z = vertexes[1].textures[1] * inv_z2;
+    float v3_z = vertexes[2].textures[1] * inv_z3;
+
+    // Combine smooth lighting vectors and point intensities outside the loop
+    float intensity1 = light1.smooth_shader(vertexes[0].normals) + intensities[0];
+    float intensity2 = light1.smooth_shader(vertexes[1].normals) + intensities[1];
+    float intensity3 = light1.smooth_shader(vertexes[2].normals) + intensities[2];
     
     for (int y = minY; y <= maxY; y++) {
+        float py = y + 0.5f;
+        int screen_y = y + height / 2;
+        int buffer_row_offset = screen_y * width + (width / 2); // Pre-calculate row offset
+
         for (int x = minX; x <= maxX; x++) {
-            // Sample at pixel center
             float px = x + 0.5f;
-            float py = y + 0.5f;
 
             // 2. Edge functions (2D cross products)
             float e0 = (x2 - x1) * (py - y1) - (px - x1) * (y2 - y1);
             float e1 = (x3 - x2) * (py - y2) - (px - x2) * (y3 - y2);
             float e2 = (x1 - x3) * (py - y3) - (px - x3) * (y1 - y3);
 
-            // 3. Winding validation: Allow both front-facing and back-facing geometry
-            bool is_inside = (e0 <= margin_of_error && e1 <= margin_of_error && e2 <= margin_of_error) || (e0 >= margin_of_error && e1 >= margin_of_error && e2 >= margin_of_error);
-            
-            if (is_inside) {
+            // Winding validation
+            if ((e0 <= margin_of_error && e1 <= margin_of_error && e2 <= margin_of_error) || 
+                (e0 >= margin_of_error && e1 >= margin_of_error && e2 >= margin_of_error)) {
+                
                 // Compute barycentric weights
                 array<float, 3> weight = getweight_z(v1, v2, v3, px, py);
                 
-               // 1. Calculate the reciprocal of depth for each vertex before the loop
-                float inv_z1 = 1.0f / z_values[0];
-                float inv_z2 = 1.0f / z_values[1];
-                float inv_z3 = 1.0f / z_values[2];
-
-                
-                // 2. Interpolate the inverted depths linearly using your barycentric weights
+                // Interpolate depth
                 float inv_z = inv_z1 * weight[0] + inv_z2 * weight[1] + inv_z3 * weight[2];
-                float u_by_z = uv[0][0]* inv_z1 * weight[0] + uv[1][0]*inv_z2 * weight[1] + uv[2][0]*inv_z3 * weight[2];
-                float v_by_z = uv[0][1]* inv_z1 * weight[0] + uv[1][1]*inv_z2 * weight[1] + uv[2][1]*inv_z3 * weight[2];
-                float u = u_by_z/inv_z*texture_scale_x;
-                float v = v_by_z /inv_z*texture_scale_y;
-                
-
-                float lit_by_z = intensity1 * inv_z1 * weight[0] + intensity2 * inv_z2 * weight[1] + intensity3 * inv_z3 * weight[2];
-                light_intensity = lit_by_z / inv_z;
-                
-                // 3. Recover the perspective-correct Z value for the Z-buffer test
                 float perspective_correct_z = 1.0f / inv_z;
+
+                int buffer_idx = buffer_row_offset + x;
+
+                // 3. Early Depth Test (Bail out immediately if pixel is hidden)
+                if (perspective_correct_z >= z_buffer[buffer_idx]) continue;
+
+                // 4. Perspective correct UV texture mapping
+                float u_by_z = u1_z * weight[0] + u2_z * weight[1] + u3_z * weight[2];
+                float v_by_z = v1_z * weight[0] + v2_z * weight[1] + v3_z * weight[2];
+                float u = u_by_z / inv_z * texture_scale_x;
+                float v = v_by_z / inv_z * texture_scale_y;
+                
                 int texel_x = ((static_cast<int>(u * texture.width)) % texture.width + texture.width) % texture.width;
                 int texel_y = ((static_cast<int>(v * texture.height)) % texture.height + texture.height) % texture.height;
 
-                // Debug output (only print once per frame to avoid spam)
-                static int debug_counter = 0;
-                if (debug_counter < 5) {
-                    cout << "u=" << u << " v=" << v << " scale=" << light1.scale
-                         << " texel_x=" << texel_x << " texel_y=" << texel_y
-                         << " tex_width=" << texture.width << " tex_height=" << texture.height << endl;
-                    debug_counter++;
-                }
-                int screen_x = x + width / 2;
-                int screen_y = y + height / 2;
-                int buffer_idx = screen_y * width + screen_x;
+                // 5. Linear shading interpolation
+                float light_intensity = intensity1 * weight[0] + intensity2 * weight[1] + intensity3 * weight[2];
+                light_intensity = std::max(0.0f, std::min(1.0f, light_intensity));
 
-                // 4. Run the depth test using the corrected Z
-                if (perspective_correct_z < z_buffer[buffer_idx]) {
-                    z_buffer[buffer_idx] = perspective_correct_z;
-                    uint32_t texture_color = texture.texels[texel_y*texture.width +texel_x];
-                   
-                    r = (texture_color >> 16) & 0xFF; 
-                    g= (texture_color >> 8)  & 0xFF; 
-                    b=  texture_color        & 0xFF; 
-                    
-                    r = static_cast<uint8_t>(r * light_intensity);
-                    g = static_cast<uint8_t>(g * light_intensity);
-                    b = static_cast<uint8_t>(b * light_intensity);
+                // 6. Color blending and rendering
+                z_buffer[buffer_idx] = perspective_correct_z;
+                uint32_t texture_color = texture.texels[texel_y * texture.width + texel_x];
+               
+                uint8_t r = static_cast<uint8_t>(((texture_color >> 16) & 0xFF) * light_intensity);
+                uint8_t g = static_cast<uint8_t>(((texture_color >> 8)  & 0xFF) * light_intensity);
+                uint8_t b = static_cast<uint8_t>((texture_color         & 0xFF) * light_intensity);
 
-                    uint32_t shaded_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
-        
-                    engine.put_pixel(x, y,shaded_color);
-                }
-                
+                uint32_t shaded_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                engine.put_pixel(x, y, shaded_color);
             }
         }
     }

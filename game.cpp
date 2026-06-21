@@ -5,7 +5,11 @@ void Game::update()
     if (!initialized) {
         // Reserve space before creating instances to prevent vector reallocation
         scene.reserve(9);
-
+        // lights
+        point_light p1 = {50,{10,20,50},{1,0,1}};
+        lights.push_back(p1);
+        point_light p2 = {150,{1,50,50},{1,0,1}};
+        lights.push_back(p2);
         // Create multiple cubes at different positions
         float spacing = 5.0f;
         for (int x = -1; x <= 1; x++) {

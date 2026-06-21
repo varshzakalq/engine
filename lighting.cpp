@@ -1,22 +1,12 @@
+
 #include "lighting.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 using namespace std;
 
-Vector3 subtract(array<double,4>v1,array<double,4>v2){
-    return {v1[0]-v2[0],v1[1]-v2[1],v1[2]-v2[2]};
-}
-Vector3 cross(Vector3 v1,Vector3 v2){
-    return {
-        v1.y*v2.z-v1.z*v2.y,
-        -v1.x*v2.z+ v1.z*v2.x,
-        v1.x*v2.y - v1.y*v2.x
-    };
-}
-double dot(Vector3 v1,Vector3 v2){
-    return v1.x*v2.x +v1.y*v2.y + v1.z*v2.z;
-}
+
+
 double lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4>v3){
     
     Vector3 e1 = subtract(v2,v1);
@@ -36,16 +26,11 @@ double lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4
 
 }
 float lighting::smooth_shader(Vector3 normal ){
-    // normal.x = normal.x;
-    // normal.y = normal.y;
-    // normal.z = normal.z;
-    // double length = sqrt(normal.x*normal.x +normal.y*normal.y + normal.z*normal.z);
-    // normal.x /= length;
-    // normal.y /= length;
-    // normal.z /= length;
+    
     double intensity = dot(normal,smooth_light);
     intensity = std::max(ambient_light, std::min(1.0, intensity));
-
-    return static_cast<float>(intensity);
+    //this turns off the main light _________________??>><>?<<>>><<>>??<<
+    return 0;
+    //return static_cast<float>(intensity);
 
 }
