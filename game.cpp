@@ -3,55 +3,40 @@
 void Game::update()
 {
     if (!initialized) {
-        // Reserve space before creating instances to prevent vector reallocation
-        scene.reserve(9);
-        // lights
+        // Reserve space for just 1 instance
+        scene.reserve(1);
+        
+        // Lights
         point_light p1 = {50,{10,20,50},{1,0,1}};
         lights.push_back(p1);
         point_light p2 = {150,{1,50,50},{1,0,1}};
         lights.push_back(p2);
-        // Create multiple cubes at different positions
-        float spacing = 5.0f;
-        for (int x = -1; x <= 1; x++) {
-            for (int z = 0; z <= 2; z++) {
-                auto& cube = scene.create_instance(0);
-                cube.translate(x * spacing, 0, z * spacing + 30);
-                cubes.push_back(&cube);
-            }
-        }
+        
+        // Create only a single cube instance
+        auto& cube = scene.create_instance(0);
+        
+        // Position it centered horizontally (X=0, Y=0) and 30 units forward (Z=30)
+        cube.translate(0.0f, 0.0f, 30.0f);
+        cubes.push_back(&cube);
+        
         initialized = true;
     }
 
     float delta_time = timer.get_frame_time();
 
-    // Rotate each cube at different rates and axes
-    Vector3 axes[9] = {
-        {1.0f, 0.0f, 0.0f}, // X-axis
-        {0.0f, 1.0f, 0.0f}, // Y-axis
-        {0.0f, 0.0f, 1.0f}, // Z-axis
-        {1.0f, 1.0f, 0.0f}, // XY
-        {1.0f, 0.0f, 1.0f}, // XZ
-        {0.0f, 1.0f, 1.0f}, // YZ
-        {1.0f, 1.0f, 1.0f}, // XYZ
-        {1.0f, 0.5f, 0.0f}, // X+Y
-        {0.5f, 1.0f, 0.0f}  // X+Y alt
-    };
-
-    for (size_t i = 0; i < cubes.size(); i++) {
-        float rotation_speed = 0.5f + (i * 0.3f);
+    // Rotate your single cube
+    // Adjust rotation_speed or the rotation axis vector here as needed
+    if (!cubes.empty()) {
+        float rotation_speed = 1.0f; 
         float angle = rotation_speed * delta_time;
-        cubes[i]->rotate(angle, axes[i]);
+        
+        // Rotating around a clean diagonal axis (X and Y) to test all sides
+        Vector3 rotation_axis = {1.0f, 1.0f, 0.0f}; 
+        cubes[0]->rotate(angle, rotation_axis);
     }
 
     scene.update_transforms();
 }
-
-
-
-
-
-
-
 
 
 

@@ -5,7 +5,7 @@ using namespace std;
 #include "basic.h"
 #include "engine.h"
 #include <cmath> // Required for std::abs
-#include"texture.h"
+#include "texture.h"
 
 line::line(Engine &eng): e(eng){
 
@@ -87,14 +87,13 @@ pair<int, int> project::onscreen(double x1, double y1, double z1, float focal_le
     
     return { static_cast<int>(std::round(x)), static_cast<int>(std::round(y)) };
 }
-
 void project::fill_color(
      const array<vertex_data, 3> &vertexes, 
-     const array<float, 3> &intensities,    
+     const array<float, 3> &intensities,    // Pre-calculated point light intensities
      const pair<int, int> &v1, 
      const pair<int, int> &v2, 
      const pair<int, int> &v3, 
-     Texture &texture,                     // <-- Put it back here
+     Texture &texture, normalMap &normal_map,
      vector<float>& z_buffer, 
      int width, 
      int height, 
@@ -120,7 +119,7 @@ void project::fill_color(
     float inv_z2 = 1.0f / z2;
     float inv_z3 = 1.0f / z3;
 
-    // Pre-multiply texture coordinates by inverse depth (Hoist out of loop)
+    // Pre-multiply texture coordinates by inverse depth
     float u1_z = vertexes[0].textures[0] * inv_z1;
     float u2_z = vertexes[1].textures[0] * inv_z2;
     float u3_z = vertexes[2].textures[0] * inv_z3;
@@ -129,25 +128,48 @@ void project::fill_color(
     float v2_z = vertexes[1].textures[1] * inv_z2;
     float v3_z = vertexes[2].textures[1] * inv_z3;
 
-    // Combine smooth lighting vectors and point intensities outside the loop
-    float intensity1 = light1.smooth_shader(vertexes[0].normals) + intensities[0];
-    float intensity2 = light1.smooth_shader(vertexes[1].normals) + intensities[1];
-    float intensity3 = light1.smooth_shader(vertexes[2].normals) + intensities[2];
+    // Pre-multiply point light intensities by inverse depth
+    float point_lit1_z = intensities[0] * inv_z1;
+    float point_lit2_z = intensities[1] * inv_z2;
+    float point_lit3_z = intensities[2] * inv_z3;
+
+    // =================================================================
+    // PRE-CALCULATE TBN SPACE USING WORLD-SPACE EDGES
+    // =================================================================
+    Vector3 edge1 = subtract(vertexes[1].vertex, vertexes[0].vertex);
+    Vector3 edge2 = subtract(vertexes[2].vertex, vertexes[0].vertex);
+
+    float deltaU1 = vertexes[1].textures[0] - vertexes[0].textures[0];
+    float deltaV1 = vertexes[1].textures[1] - vertexes[0].textures[1];
+    float deltaU2 = vertexes[2].textures[0] - vertexes[0].textures[0];
+    float deltaV2 = vertexes[2].textures[1] - vertexes[0].textures[1];
+
+    float divisor = (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+    float f = (std::abs(divisor) < 1e-6f) ? 1.0f : 1.0f / divisor;
+
+    Vector3 face_tangent;
+    face_tangent.x = f * (deltaV2 * edge1.x - deltaV1 * edge2.x);
+    face_tangent.y = f * (deltaV2 * edge1.y - deltaV1 * edge2.y);
+    face_tangent.z = f * (deltaV2 * edge1.z - deltaV1 * edge2.z);
+    face_tangent = Normalize(face_tangent);
+
+    Vector3 face_normal = Normalize(cross(edge1, edge2));
+    Vector3 face_bitangent = Normalize(cross(face_normal, face_tangent));
+    // =================================================================
     
     for (int y = minY; y <= maxY; y++) {
         float py = y + 0.5f;
         int screen_y = y + height / 2;
-        int buffer_row_offset = screen_y * width + (width / 2); // Pre-calculate row offset
-
+        int buffer_row_offset = screen_y * width + (width / 2);
+        
         for (int x = minX; x <= maxX; x++) {
             float px = x + 0.5f;
 
-            // 2. Edge functions (2D cross products)
+            // Edge functions (2D cross products)
             float e0 = (x2 - x1) * (py - y1) - (px - x1) * (y2 - y1);
             float e1 = (x3 - x2) * (py - y2) - (px - x2) * (y3 - y2);
             float e2 = (x1 - x3) * (py - y3) - (px - x3) * (y1 - y3);
 
-            // Winding validation
             if ((e0 <= margin_of_error && e1 <= margin_of_error && e2 <= margin_of_error) || 
                 (e0 >= margin_of_error && e1 >= margin_of_error && e2 >= margin_of_error)) {
                 
@@ -160,10 +182,10 @@ void project::fill_color(
 
                 int buffer_idx = buffer_row_offset + x;
 
-                // 3. Early Depth Test (Bail out immediately if pixel is hidden)
+                // Early Depth Test
                 if (perspective_correct_z >= z_buffer[buffer_idx]) continue;
 
-                // 4. Perspective correct UV texture mapping
+                // Perspective correct UV texture mapping
                 float u_by_z = u1_z * weight[0] + u2_z * weight[1] + u3_z * weight[2];
                 float v_by_z = v1_z * weight[0] + v2_z * weight[1] + v3_z * weight[2];
                 float u = u_by_z / inv_z * texture_scale_x;
@@ -172,19 +194,52 @@ void project::fill_color(
                 int texel_x = ((static_cast<int>(u * texture.width)) % texture.width + texture.width) % texture.width;
                 int texel_y = ((static_cast<int>(v * texture.height)) % texture.height + texture.height) % texture.height;
 
-                // 5. Linear shading interpolation
-                float light_intensity = intensity1 * weight[0] + intensity2 * weight[1] + intensity3 * weight[2];
-                light_intensity = std::max(0.0f, std::min(1.0f, light_intensity));
-
-                // 6. Color blending and rendering
                 z_buffer[buffer_idx] = perspective_correct_z;
                 uint32_t texture_color = texture.texels[texel_y * texture.width + texel_x];
-               
-                uint8_t r = static_cast<uint8_t>(((texture_color >> 16) & 0xFF) * light_intensity);
-                uint8_t g = static_cast<uint8_t>(((texture_color >> 8)  & 0xFF) * light_intensity);
-                uint8_t b = static_cast<uint8_t>((texture_color         & 0xFF) * light_intensity);
+                
+                // 1. POINT LIGHT PASS: Interpolate vertex light levels across triangle face
+                float point_lit_by_z = point_lit1_z * weight[0] + point_lit2_z * weight[1] + point_lit3_z * weight[2];
+                float point_light_intensity = point_lit_by_z / inv_z;
 
-                uint32_t shaded_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
+                // 2. DIRECTIONAL LIGHT PASS: Read normal map data
+                uint32_t normal_map_value = normal_map.texels[texel_y * texture.width + texel_x];
+                Vector3 normals_from_map = extract_rgb(normal_map_value);
+                
+                // Remap normal coordinates safely from [0.0, 1.0] to [-1.0, 1.0]
+                scale(normals_from_map, 0.0f, 2.0f);
+                normals_from_map.x -= 1.0f;
+                normals_from_map.y -= 1.0f; 
+                normals_from_map.z -= 1.0f;
+                
+                // Set normal map accent detail level
+                float normal_strength = 1.0f; 
+                normals_from_map.x *= normal_strength;
+                normals_from_map.y *= normal_strength;
+                normals_from_map.z = std::sqrt(std::max(0.0, 1.0 - (normals_from_map.x * normals_from_map.x + normals_from_map.y * normals_from_map.y)));
+                normals_from_map = Normalize(normals_from_map);
+
+                // Transform normal map sampling using World-Space TBN
+                Vector3 transformed_world_normal;
+                transformed_world_normal.x = face_tangent.x * normals_from_map.x + face_bitangent.x * normals_from_map.y + face_normal.x * normals_from_map.z;
+                transformed_world_normal.y = face_tangent.y * normals_from_map.x + face_bitangent.y * normals_from_map.y + face_normal.y * normals_from_map.z;
+                transformed_world_normal.z = face_tangent.z * normals_from_map.x + face_bitangent.z * normals_from_map.y + face_normal.z * normals_from_map.z;
+                transformed_world_normal = Normalize(transformed_world_normal);
+
+                // FIX: Pass the modified world normal into your custom shader function!
+                // (Note: Update 'light1' if your active lighting class instantiation variable is named differently)
+                float dir_light_intensity = light1.smooth_shader(transformed_world_normal);
+
+                // 3. COMBINE LIGHT SYSTEMS
+                float total_intensity = dir_light_intensity + point_light_intensity;
+                total_intensity = std::max(0.0f, std::min(1.0f, total_intensity));
+
+                // Render shaded color out to pipeline
+                Vector3 color = extract_rgb(texture_color);
+                color.x *= total_intensity;
+                color.y *= total_intensity;
+                color.z *= total_intensity;
+                
+                uint32_t shaded_color = rgb_to_color(color);
                 engine.put_pixel(x, y, shaded_color);
             }
         }

@@ -30,7 +30,7 @@ float lighting::smooth_shader(Vector3 normal ){
     double intensity = dot(normal,smooth_light);
     intensity = std::max(ambient_light, std::min(1.0, intensity));
     //this turns off the main light _________________??>><>?<<>>><<>>??<<
-    return 0;
-    //return static_cast<float>(intensity);
+    
+    return static_cast<float>(intensity);
 
 }

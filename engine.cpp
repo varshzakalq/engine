@@ -34,7 +34,8 @@ void Engine::init(uint32_t* pixel_array, int w, int h) {
     height = h;
     z_buffer.resize(w*h);
     fill_n(z_buffer.begin(), w * h, deapth);
-    crate_texture.load_bmp("assets/crate_1.bmp");
+    crate_texture.load_bmp("assets/texture.bmp");
+    crate_Map.load_bmp("assets/normal.bmp");
 }
 
 void Engine::put_pixel(int x, int y, uint32_t color) {
@@ -163,14 +164,14 @@ void Engine::render_instance(const Instance& inst, vector<point_light> lights) {
                 }
             }
             
-            // Call our newly streamlined fill_color function with crate_texture included!
+            // Call our newly streamlined fill_color function
             projection.fill_color(
                 triangle_vertices, 
                 intensities, 
                 xycoordinates[0], 
                 xycoordinates[1], 
                 xycoordinates[2], 
-                crate_texture, // Passed correctly here
+                crate_texture, crate_Map, 
                 z_buffer, 
                 width, 
                 height, 

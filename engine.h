@@ -32,6 +32,7 @@ private:
     std::vector<float> z_buffer;
     std::vector<vertex_data>transformed_vertices;
     Texture crate_texture; //this will make sure it only created once
+    normalMap crate_Map;
 
     // Renders a single instance's mesh using its world transform
     void render_instance(const Instance& inst,vector<point_light>lights);
