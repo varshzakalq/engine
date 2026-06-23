@@ -20,8 +20,10 @@ class lighting{
     
     Vector3 smooth_light = {0,0,-1.0};
     uint32_t light_color;
-    double ambient_light =0.1;
+    
 public:
+    Vector3 sky_color    = { 0.3f, 0.4f, 0.6f }; 
+    Vector3 ground_color = { 0.15f, 0.12f, 0.1f };
     Vector3 light_pos = {0,0,1.0};
     int scale = 5;
     

@@ -34,8 +34,10 @@ void Engine::init(uint32_t* pixel_array, int w, int h) {
     height = h;
     z_buffer.resize(w*h);
     fill_n(z_buffer.begin(), w * h, deapth);
-    crate_texture.load_bmp("assets/texture.bmp");
-    crate_Map.load_bmp("assets/normal.bmp");
+    crate_texture.load_bmp("assets/crate_1.bmp");
+    crate_Map.load_bmp("assets/normalmap.bmp");
+    ao_map.load_bmp("assets/aomap.bmp");
+    sky_bmp.load_bmp("assets/sky.bmp");
 }
 
 void Engine::put_pixel(int x, int y, uint32_t color) {
@@ -171,7 +173,7 @@ void Engine::render_instance(const Instance& inst, vector<point_light> lights) {
                 xycoordinates[0], 
                 xycoordinates[1], 
                 xycoordinates[2], 
-                crate_texture, crate_Map, 
+                crate_texture, crate_Map, ao_map,
                 z_buffer, 
                 width, 
                 height, 
@@ -187,14 +189,51 @@ void Engine::render_instance(const Instance& inst, vector<point_light> lights) {
     }
 }
 
-void Engine::update_and_render(const std::vector<Instance>& instances,const vector<point_light> lights) {
+void Engine::update_and_render(const std::vector<Instance>& instances, const vector<point_light> lights) {
     // 1. CLEAR THE SCREEN FIRST
     if (pixels != nullptr) {
         memset(pixels, 0, width * height * sizeof(uint32_t));
     }
     fill_n(z_buffer.begin(), width * height, deapth);
 
+    // =================================================================
+    // 2. GENERATE INVERSE MATRICES INTERNALLY (DECOUPLED FROM SDL)
+    // =================================================================
+    // We fetch the focal length directly from your camera object (cam1)
+    float f = cam1.focal_length; 
+    float inv_f = (f != 0.0f) ? (1.0f / f) : 1.0f;
+
+    // Create Inverse Projection
+    Matrix4x4 inverse_projection_matrix = {{
+        { inv_f, 0.0,  0.0, 0.0 },
+        { 0.0,  inv_f, 0.0, 0.0 },
+        { 0.0,  0.0,  0.0, 1.0 }, 
+        { 0.0,  0.0,  1.0, 0.0 }
+    }};
+
+    Matrix4x4 inverse_view_matrix = {{
+        { 1.0, 0.0, 0.0, 0.0 },
+        { 0.0, 1.0, 0.0, 0.0 },
+        { 0.0, 0.0, 1.0, 0.0 },
+        { 0.0, 0.0, 0.0, 1.0 }
+    }};
+
+    // =================================================================
+    // 3. DRAW THE SKYBOX FIRST 
+    // =================================================================
+    projection.draw_panorama_skybox(
+        sky_bmp, 
+        inverse_projection_matrix, 
+        inverse_view_matrix, 
+        width, 
+        height, 
+        *this
+    );
+
+    // =================================================================
+    // 4. RENDER YOUR SCENE OBJECTS NEXT
+    // =================================================================
     for (const Instance& inst : instances) {
-        render_instance(inst,lights);
+        render_instance(inst, lights);
     }
 }

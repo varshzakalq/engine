@@ -28,11 +28,17 @@ void fill_color(
      const pair<int, int> &v1, 
      const pair<int, int> &v2, 
      const pair<int, int> &v3, 
-     Texture &texture,   normalMap &normal_map,
+     Texture &texture,   normalMap &normal_map,Texture &ao_map,
      vector<float>& z_buffer, 
      int width, 
      int height, 
      Engine &engine
     ) ;
-
+    void draw_panorama_skybox(
+    const Texture &panorama_bmp,      // Your single flat 360° BMP image
+    const Matrix4x4 &inv_proj_matrix,  // Inverse of your projection matrix
+    const Matrix4x4 &inv_view_matrix,  // Inverse of your view matrix
+    int width, int height,
+    Engine &engine
+);
 };

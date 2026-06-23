@@ -17,7 +17,7 @@ double lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4
     e2_cross_e1.y/= length;
     e2_cross_e1.z/= length;
     double intensity = dot(e2_cross_e1,light_pos);
-    intensity = std::max(ambient_light, std::min(1.0, intensity));
+    //intensity = std::max(ambient_light, std::min(1.0, intensity));
     // Temporary debug test inside your flat_shader function:
     // 0xFFFFA500
 
@@ -28,7 +28,7 @@ double lighting:: flat_shader(array<double,4>v1,array<double,4>v2,array<double,4
 float lighting::smooth_shader(Vector3 normal ){
     
     double intensity = dot(normal,smooth_light);
-    intensity = std::max(ambient_light, std::min(1.0, intensity));
+    //intensity = std::max(ambient_light, std::min(1.0, intensity));
     //this turns off the main light _________________??>><>?<<>>><<>>??<<
     
     return static_cast<float>(intensity);

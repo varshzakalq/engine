@@ -33,6 +33,8 @@ private:
     std::vector<vertex_data>transformed_vertices;
     Texture crate_texture; //this will make sure it only created once
     normalMap crate_Map;
+    Texture ao_map;
+    Texture sky_bmp; 
 
     // Renders a single instance's mesh using its world transform
     void render_instance(const Instance& inst,vector<point_light>lights);

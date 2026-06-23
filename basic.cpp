@@ -93,7 +93,7 @@ void project::fill_color(
      const pair<int, int> &v1, 
      const pair<int, int> &v2, 
      const pair<int, int> &v3, 
-     Texture &texture, normalMap &normal_map,
+     Texture &texture, normalMap &normal_map, Texture &ao_map,
      vector<float>& z_buffer, 
      int width, 
      int height, 
@@ -196,13 +196,9 @@ void project::fill_color(
 
                 z_buffer[buffer_idx] = perspective_correct_z;
                 uint32_t texture_color = texture.texels[texel_y * texture.width + texel_x];
-                
-                // 1. POINT LIGHT PASS: Interpolate vertex light levels across triangle face
-                float point_lit_by_z = point_lit1_z * weight[0] + point_lit2_z * weight[1] + point_lit3_z * weight[2];
-                float point_light_intensity = point_lit_by_z / inv_z;
-
-                // 2. DIRECTIONAL LIGHT PASS: Read normal map data
                 uint32_t normal_map_value = normal_map.texels[texel_y * texture.width + texel_x];
+                uint32_t ao_pixel = ao_map.texels[texel_y * ao_map.width + texel_x];
+
                 Vector3 normals_from_map = extract_rgb(normal_map_value);
                 
                 // Remap normal coordinates safely from [0.0, 1.0] to [-1.0, 1.0]
@@ -224,20 +220,42 @@ void project::fill_color(
                 transformed_world_normal.y = face_tangent.y * normals_from_map.x + face_bitangent.y * normals_from_map.y + face_normal.y * normals_from_map.z;
                 transformed_world_normal.z = face_tangent.z * normals_from_map.x + face_bitangent.z * normals_from_map.y + face_normal.z * normals_from_map.z;
                 transformed_world_normal = Normalize(transformed_world_normal);
-
+                
                 // FIX: Pass the modified world normal into your custom shader function!
                 // (Note: Update 'light1' if your active lighting class instantiation variable is named differently)
                 float dir_light_intensity = light1.smooth_shader(transformed_world_normal);
+                
+                // 1. POINT LIGHT PASS: Interpolate vertex light levels across triangle face
+                float point_lit_by_z = point_lit1_z * weight[0] + point_lit2_z * weight[1] + point_lit3_z * weight[2];
+                float point_light_intensity = point_lit_by_z / inv_z;
 
-                // 3. COMBINE LIGHT SYSTEMS
-                float total_intensity = dir_light_intensity + point_light_intensity;
+
+                //before total intensity calculating ambient contribution;
+                float hemi_weight = transformed_world_normal.y * 0.5f + 0.5f;
+
+                Vector3 ambient_light;
+                //here light1 is the main directional light storing all the ground and sky color
+                ambient_light.x = light1.ground_color.x + hemi_weight * (light1.sky_color.x - light1.ground_color.x);
+                ambient_light.y = light1.ground_color.y + hemi_weight * (light1.sky_color.y - light1.ground_color.y);
+                ambient_light.z = light1.ground_color.z + hemi_weight * (light1.sky_color.z - light1.ground_color.z);
+
+                // 5. APPLYING THE AO FACTOR TO THE AMBIENT LIGHTING
+                Vector3 ao_factor = extract_rgb(ao_pixel); 
+                float ao_strength = ao_factor.x; // Grayscale texture means R=G=B, so .x works fine
+
+                ambient_light.x *= ao_strength;
+                ambient_light.y *= ao_strength;
+                ambient_light.z *= ao_strength;
+
+                // 3. COMBINE LIGHT SYSTEMS 
+                float total_intensity = dir_light_intensity + point_light_intensity; //currently only using point light intensities not the colors 
                 total_intensity = std::max(0.0f, std::min(1.0f, total_intensity));
 
                 // Render shaded color out to pipeline
                 Vector3 color = extract_rgb(texture_color);
-                color.x *= total_intensity;
-                color.y *= total_intensity;
-                color.z *= total_intensity;
+                color.x *= (total_intensity+ambient_light.x);
+                color.y *= (total_intensity+ambient_light.y);
+                color.z *= (total_intensity+ambient_light.z);
                 
                 uint32_t shaded_color = rgb_to_color(color);
                 engine.put_pixel(x, y, shaded_color);
@@ -245,3 +263,60 @@ void project::fill_color(
         }
     }
 }
+
+
+void project::draw_panorama_skybox(
+    const Texture &panorama_bmp,      
+    const Matrix4x4 &inv_proj_matrix,  
+    const Matrix4x4 &inv_view_matrix,  
+    int width, int height,
+    Engine &engine
+) {
+    // 1. Strip translations safely without using .m fields
+    Matrix4x4 inv_view_rot_only = inv_view_matrix;
+    inv_view_rot_only[0][3] = 0.0;
+    inv_view_rot_only[1][3] = 0.0;
+    inv_view_rot_only[2][3] = 0.0;
+
+    const float PI = 3.1415926535f;
+
+    for (int y = -height / 2; y < height / 2; y++) {
+        float norm_y = (float)y / (height / 2.0f);
+        
+        for (int x = -width / 2; x < width / 2; x++) {
+            float norm_x = (float)x / (width / 2.0f);
+
+            // Create flat screen-space point
+            Vector3 clip_space_pixel = { norm_x, norm_y, 1.0f };
+
+            // Un-project from screen space into view space
+            Vector3 view_space_dir;
+            view_space_dir.x = inv_proj_matrix[0][0] * clip_space_pixel.x + inv_proj_matrix[0][1] * clip_space_pixel.y + inv_proj_matrix[0][2] * clip_space_pixel.z + inv_proj_matrix[0][3];
+            view_space_dir.y = inv_proj_matrix[1][0] * clip_space_pixel.x + inv_proj_matrix[1][1] * clip_space_pixel.y + inv_proj_matrix[1][2] * clip_space_pixel.z + inv_proj_matrix[1][3];
+            view_space_dir.z = inv_proj_matrix[2][0] * clip_space_pixel.x + inv_proj_matrix[2][1] * clip_space_pixel.y + inv_proj_matrix[2][2] * clip_space_pixel.z + inv_proj_matrix[2][3];
+
+            // Transform view space direction into world direction spaces
+            Vector3 world_space_dir;
+            world_space_dir.x = inv_view_rot_only[0][0] * view_space_dir.x + inv_view_rot_only[0][1] * view_space_dir.y + inv_view_rot_only[0][2] * view_space_dir.z + inv_view_rot_only[0][3];
+            world_space_dir.y = inv_view_rot_only[1][0] * view_space_dir.x + inv_view_rot_only[1][1] * view_space_dir.y + inv_view_rot_only[1][2] * view_space_dir.z + inv_view_rot_only[1][3];
+            world_space_dir.z = inv_view_rot_only[2][0] * view_space_dir.x + inv_view_rot_only[2][1] * view_space_dir.y + inv_view_rot_only[2][2] * view_space_dir.z + inv_view_rot_only[2][3];
+            
+            // Normalize using your engine's vector routines 
+            world_space_dir = Normalize(world_space_dir);
+
+            // Panorama UV conversion formulas
+            float u = 0.5f + (std::atan2(world_space_dir.z, world_space_dir.x) / (2.0f * PI));
+            float v = 0.5f - (std::asin(world_space_dir.y) / PI);
+
+            int texel_x = static_cast<int>(u * (panorama_bmp.width - 1));
+            int texel_y = static_cast<int>(v * (panorama_bmp.height - 1));
+            
+            texel_x = std::max(0, std::min(panorama_bmp.width - 1, texel_x));
+            texel_y = std::max(0, std::min(panorama_bmp.height - 1, texel_y));
+
+            uint32_t sky_color = panorama_bmp.texels[texel_y * panorama_bmp.width + texel_x];
+            engine.put_pixel(x, y, sky_color);
+        }
+    }
+}
+   
