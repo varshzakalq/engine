@@ -11,7 +11,14 @@ A small, from‑scratch CPU software renderer built in modern C++ and SDL3. This
 - Texture mapping with interpolated UVs and a simple lighting model (flat / smooth).
 - Real-time display via SDL3 by uploading a CPU pixel buffer into an SDL texture.
 
-## Quick demo
+## New / planned rendering features
+(added to the documentation to describe the project's direction)
+- Basic Ambient Occlusion (AO) maps: per-texel AO multiplier to darken occluded areas.
+- Point and Directional lights: support for multiple light types with attenuation for point lights and directional falloff.
+- Normal mapping: sample tangent-space normal maps per-pixel to add high-frequency surface detail without extra geometry.
+- "Normal spread" / roughness knob: simple configurable normal perturbation to emulate varied surface roughness and specular spread.
+
+## Quick demo / TL;DR
 - Windows: open `build.bat` or run the included `main.exe` (ensure `SDL3.dll` sits next to it).
 - From source: compile the .cpp files and link against SDL3; run the produced executable which opens a window and streams the CPU pixel buffer to the screen.
 
@@ -57,7 +64,6 @@ Run:
 Note: `build.bat` contains a Windows-specific example. If you use Linux/macOS, link against your platform's SDL3 library (and remove `.dll` / .exe references).
 
 ## Assets & examples
-currently i was testing self modelled gun in blender with a uv texture map its not loading currently in future i will definately have a loot currently i am bored of this adventure
 The `assets/` folder contains multiple test models and textures used for demonstrations:
 - cube.obj, Crate1.obj, Gun.obj, gun1.obj, m4a1_s.obj
 - crate_1.bmp, crate_1.jpg
@@ -76,24 +82,36 @@ If you add your own .obj files, ensure they have positions (v), and optionally n
   - `camera::clipper` performs near-plane clipping producing either 3- or 4-vertex polygon loops; `vertex[3]` is used as a working slot/flag.
 - Lighting:
   - `lighting::flat_shader(...)` computes face intensity using a computed face normal and a static light position; `smooth_shader` accepts per-vertex normals for interpolated shading.
+  - Planned: support for directional & point lights, AO maps and normal maps (see "New / planned rendering features" above).
 - Texture mapping:
   - `Texture` class (in `texture.h`) loads BMP and provides pixel access; `projection.fill_color` (referenced from engine.cpp) performs interpolation and texture sampling.
 
 ## Known limitations & suggestions
-- below one's can be easily fixed the major problem is obj loader not loading uv textures correctly
 - No frustum culling, no back-face culling optimizations (could be added to skip unseen triangles earlier).
 - The current clipping uses a simple near-plane at `z = 10` — make it configurable.
 - Single-threaded CPU rasterizer; potential speedups via multi-threading or SIMD.
 - Limited texture filtering (nearest/point sampling); add bilinear filtering for smoother results.
 - No explicit resource management for large models; consider streaming or memory handling for bigger scenes.
 
+## Roadmap / next steps
+- Add back-face culling and simple frustum culling for performance.
+- Implement perspective-correct interpolation for texture mapping.
+- Add configurable camera controls and input handling.
+- Implement basic AO maps, normal mapping, and multi-light support (directional + point with attenuation).
+- Introduce a modular renderer pipeline, unit tests, and CI build scripts.
+- Add cross-platform build examples (CMake).
+
 ## Contributing
 Contributions, bug reports and pull requests are welcome. If you open a PR, please:
 - Include a short description of the change and motivation.
 - For code changes, follow the existing naming/structuring style and include small, focused commits.
 
-## License
-No license file is present in this repository. Add a LICENSE if you want to open-source the project or specify usage/redistribution terms.
+## Suggested LinkedIn post
+I built a lightweight software renderer from scratch in C++ using SDL3. The project demonstrates a full CPU-based rendering pipeline: custom OBJ loading, model transforms and normal handling, clipping against a near plane, perspective projection, z-buffered triangle rasterization, texture mapping, and lighting. I plan to add basic AO maps, directional and point lights (with attenuation and normal spread), and normal maps to enhance surface detail.
+
+If this reaches any graphics or engine professionals, I’d be very grateful if you could take a look through the code and suggest optimizations or next steps — any feedback is welcome. Code, assets and a Windows build are included: https://github.com/varshzakalq/engine
+
+Would you like a shorter version or one with hashtags to boost reach?
 
 ## Contact / Attribution
-Project by: varshzakalq 
+Project by: varshzakalq — see the repository at https://github.com/varshzakalq/engine
