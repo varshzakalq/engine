@@ -13,7 +13,7 @@ using namespace std; // Include this here so you can use your Line tool!
 
 
 
-Engine::Engine() : myLine(*this) ,obj("assets/cube.obj") {
+Engine::Engine() : myLine(*this) ,obj("assets/mygun.obj") {
     pixels = nullptr;
     width = 0;
     height = 0;
@@ -34,9 +34,10 @@ void Engine::init(uint32_t* pixel_array, int w, int h) {
     height = h;
     z_buffer.resize(w*h);
     fill_n(z_buffer.begin(), w * h, deapth);
-    crate_texture.load_bmp("assets/crate_1.bmp");
-    crate_Map.load_bmp("assets/normalmap.bmp");
-    ao_map.load_bmp("assets/aomap.bmp");
+
+    crate_texture.load_bmp("assets/guntextures.bmp");
+    crate_Map.load_bmp("assets/gunnormal.bmp");
+    ao_map.load_bmp("assets/gunao.bmp");
     sky_bmp.load_bmp("assets/sky.bmp");
 }
 

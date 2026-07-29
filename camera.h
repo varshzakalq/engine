@@ -6,7 +6,7 @@ using Vector4 = std::array<double, 4>;
 
 class camera{
 public:
-    float focal_length = 2;
+    float focal_length = 7;
 };
 class clipper{
     int clipping_plane_z= 10;

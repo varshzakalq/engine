@@ -18,8 +18,8 @@ class project{
 int size = 600;
 lighting light1;
 float margin_of_error = 0.01f; 
-float texture_scale_x  = 3.0f;
-float texture_scale_y = 3.0f;
+float texture_scale_x  = 1.0f;
+float texture_scale_y = 1.0f;
 public:
 pair<int, int> onscreen(double x1, double y1, double z1, float focal_length) ;
 void fill_color(
