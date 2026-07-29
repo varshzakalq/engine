@@ -85,13 +85,6 @@ If you add your own .obj files, ensure they have positions (v), and optionally n
 - Limited texture filtering (nearest/point sampling); add bilinear filtering for smoother results.
 - No explicit resource management for large models; consider streaming or memory handling for bigger scenes.
 
-## Roadmap / next steps
-- Add back-face culling and simple frustum culling for performance.
-- Implement perspective-correct interpolation for texture mapping.
-- Add configurable camera controls and input handling.
-- Introduce a modular renderer pipeline, unit tests, and CI build scripts.
-- Add cross-platform build examples (CMake).
-
 ## Contributing
 Contributions, bug reports and pull requests are welcome. If you open a PR, please:
 - Include a short description of the change and motivation.
