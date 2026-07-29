@@ -11,7 +11,7 @@ A small, from‑scratch CPU software renderer built in modern C++ and SDL3. This
 - Texture mapping with interpolated UVs and a simple lighting model (flat / smooth).
 - Real-time display via SDL3 by uploading a CPU pixel buffer into an SDL texture.
 
-## Quick demo / TL;DR
+## Quick demo
 - Windows: open `build.bat` or run the included `main.exe` (ensure `SDL3.dll` sits next to it).
 - From source: compile the .cpp files and link against SDL3; run the produced executable which opens a window and streams the CPU pixel buffer to the screen.
 
