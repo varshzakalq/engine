@@ -94,4 +94,4 @@ Contributions, bug reports and pull requests are welcome. If you open a PR, plea
 No license file is present in this repository. Add a LICENSE if you want to open-source the project or specify usage/redistribution terms.
 
 ## Contact / Attribution
-Project by: varshzakalq — see the repository at https://github.com/varshzakalq/engine
+Project by: varshzakalq 
