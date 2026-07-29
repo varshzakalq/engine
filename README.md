@@ -57,6 +57,7 @@ Run:
 Note: `build.bat` contains a Windows-specific example. If you use Linux/macOS, link against your platform's SDL3 library (and remove `.dll` / .exe references).
 
 ## Assets & examples
+currently i was testing self modelled gun in blender with a uv texture map its not loading currently in future i will definately have a loot currently i am bored of this adventure
 The `assets/` folder contains multiple test models and textures used for demonstrations:
 - cube.obj, Crate1.obj, Gun.obj, gun1.obj, m4a1_s.obj
 - crate_1.bmp, crate_1.jpg
@@ -79,6 +80,7 @@ If you add your own .obj files, ensure they have positions (v), and optionally n
   - `Texture` class (in `texture.h`) loads BMP and provides pixel access; `projection.fill_color` (referenced from engine.cpp) performs interpolation and texture sampling.
 
 ## Known limitations & suggestions
+- below one's can be easily fixed the major problem is obj loader not loading uv textures correctly
 - No frustum culling, no back-face culling optimizations (could be added to skip unseen triangles earlier).
 - The current clipping uses a simple near-plane at `z = 10` — make it configurable.
 - Single-threaded CPU rasterizer; potential speedups via multi-threading or SIMD.
