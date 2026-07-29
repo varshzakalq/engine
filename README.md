@@ -86,7 +86,7 @@ If you add your own .obj files, ensure they have positions (v), and optionally n
   - `Texture` class (in `texture.h`) loads BMP and provides pixel access; `projection.fill_color` (referenced from engine.cpp) performs interpolation and texture sampling.
 
 ## Known limitations & suggestions
-- No frustum culling, no back-face culling optimizations (could be added to skip unseen triangles earlier).
+- No frustum culling, no ((back-face culling)-> i think i have added it ) optimizations (could be added to skip unseen triangles earlier).
 - The current clipping uses a simple near-plane at `z = 10` — make it configurable.
 - Single-threaded CPU rasterizer; potential speedups via multi-threading or SIMD.
 - Limited texture filtering (nearest/point sampling); add bilinear filtering for smoother results.
