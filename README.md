@@ -1,6 +1,6 @@
 # Custom C++ Software Renderer — engine
 
-A small, from‑scratch CPU software renderer built in modern C++ and SDL3. This project is a development journal exploring the fundamentals of a 3D rendering pipeline: OBJ model loading, transforms, clipping, perspective projection, z‑buffered triangle rasterization, texture mapping and basic lighting — all implemented without GPU shaders.
+A small, from‑scratch CPU software renderer built in modern C++ and SDL3. This project is a development journal exploring the fundamentals of a 3D rendering pipeline: OBJ model loading, transforms, clipping, perspective projection, z‑buffered triangle rasterization, texture mapping and lighting — all implemented without GPU shaders.
 
 ## Highlights / What it demonstrates
 - Full software rendering pipeline implemented on the CPU.
@@ -8,15 +8,14 @@ A small, from‑scratch CPU software renderer built in modern C++ and SDL3. This
 - Model transforms and normal handling (rotation + normalization).
 - Near-plane clipping to handle triangles intersecting the view frustum.
 - Per-pixel z-buffering for correct visibility.
-- Texture mapping with interpolated UVs and a simple lighting model (flat / smooth).
+- Texture mapping with interpolated UVs and a lighting model (flat / smooth).
 - Real-time display via SDL3 by uploading a CPU pixel buffer into an SDL texture.
 
-## New / planned rendering features
-(added to the documentation to describe the project's direction)
-- Basic Ambient Occlusion (AO) maps: per-texel AO multiplier to darken occluded areas.
-- Point and Directional lights: support for multiple light types with attenuation for point lights and directional falloff.
-- Normal mapping: sample tangent-space normal maps per-pixel to add high-frequency surface detail without extra geometry.
-- "Normal spread" / roughness knob: simple configurable normal perturbation to emulate varied surface roughness and specular spread.
+## Implemented rendering features
+- Ambient Occlusion (AO) maps: per-texel AO multiplier is used to darken occluded areas.
+- Directional and Point lights: multiple light types are supported, including point-light attenuation and directional lighting.
+- Normal mapping: tangent-space normal maps are sampled per-pixel to add high-frequency surface detail without additional geometry.
+- "Normal spread" / roughness control: configurable normal perturbation to emulate varied surface roughness and specular spread.
 
 ## Quick demo / TL;DR
 - Windows: open `build.bat` or run the included `main.exe` (ensure `SDL3.dll` sits next to it).
@@ -44,7 +43,7 @@ A small, from‑scratch CPU software renderer built in modern C++ and SDL3. This
    - Transform each vertex by a model/world matrix (rotation/translation), rotate normals and normalize them.
    - Clip triangles against a near plane (camera::clipper logic) producing either a triangle or a quad (split into two triangles).
    - Project transformed vertices to screen coordinates (camera/projection helpers).
-   - For each visible triangle: compute lighting intensity (lighting::flat_shader or smooth shader), sample texture with interpolated UVs and fill pixels while using the z-buffer to resolve visibility (projection.fill_color is invoked from engine.cpp).
+   - For each visible triangle: compute lighting intensity (lighting::flat_shader or smooth shader), sample textures (albedo, normal map, AO) with interpolated UVs and fill pixels while using the z-buffer to resolve visibility (projection.fill_color is invoked from engine.cpp).
 5. The pixel array is uploaded to the SDL_Texture (SDL_UpdateTexture) and presented on-screen via SDL_RenderPresent.
 
 ## Build & Run (developer)
@@ -82,7 +81,7 @@ If you add your own .obj files, ensure they have positions (v), and optionally n
   - `camera::clipper` performs near-plane clipping producing either 3- or 4-vertex polygon loops; `vertex[3]` is used as a working slot/flag.
 - Lighting:
   - `lighting::flat_shader(...)` computes face intensity using a computed face normal and a static light position; `smooth_shader` accepts per-vertex normals for interpolated shading.
-  - Planned: support for directional & point lights, AO maps and normal maps (see "New / planned rendering features" above).
+  - The codebase includes directional & point light handling, AO map sampling and normal mapping as implemented features.
 - Texture mapping:
   - `Texture` class (in `texture.h`) loads BMP and provides pixel access; `projection.fill_color` (referenced from engine.cpp) performs interpolation and texture sampling.
 
@@ -93,25 +92,15 @@ If you add your own .obj files, ensure they have positions (v), and optionally n
 - Limited texture filtering (nearest/point sampling); add bilinear filtering for smoother results.
 - No explicit resource management for large models; consider streaming or memory handling for bigger scenes.
 
-## Roadmap / next steps
-- Add back-face culling and simple frustum culling for performance.
-- Implement perspective-correct interpolation for texture mapping.
-- Add configurable camera controls and input handling.
-- Implement basic AO maps, normal mapping, and multi-light support (directional + point with attenuation).
-- Introduce a modular renderer pipeline, unit tests, and CI build scripts.
-- Add cross-platform build examples (CMake).
-
 ## Contributing
 Contributions, bug reports and pull requests are welcome. If you open a PR, please:
 - Include a short description of the change and motivation.
 - For code changes, follow the existing naming/structuring style and include small, focused commits.
 
 ## Suggested LinkedIn post
-I built a lightweight software renderer from scratch in C++ using SDL3. The project demonstrates a full CPU-based rendering pipeline: custom OBJ loading, model transforms and normal handling, clipping against a near plane, perspective projection, z-buffered triangle rasterization, texture mapping, and lighting. I plan to add basic AO maps, directional and point lights (with attenuation and normal spread), and normal maps to enhance surface detail.
+I built a lightweight software renderer from scratch in C++ using SDL3. The project demonstrates a full CPU-based rendering pipeline: custom OBJ loading, model transforms and normal handling, clipping against a near plane, perspective projection, z‑buffered triangle rasterization, texture mapping, and lighting. The renderer includes Ambient Occlusion maps, directional and point lights (with attenuation and configurable normal spread), and normal mapping for surface detail.
 
-If this reaches any graphics or engine professionals, I’d be very grateful if you could take a look through the code and suggest optimizations or next steps — any feedback is welcome. Code, assets and a Windows build are included: https://github.com/varshzakalq/engine
-
-Would you like a shorter version or one with hashtags to boost reach?
+If this reaches any graphics or engine professionals, I’d be extremely grateful if you could take a look through the code and suggest optimizations or next steps — performance tips, pipeline improvements, or feature prioritization would be especially helpful. Code, assets and a Windows build are available here: https://github.com/varshzakalq/engine
 
 ## Contact / Attribution
 Project by: varshzakalq — see the repository at https://github.com/varshzakalq/engine
